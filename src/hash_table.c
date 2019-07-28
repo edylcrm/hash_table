@@ -67,6 +67,45 @@ ht_hash_table *ht_new_hash_table(const int base_size) {
     return table;
 }
 
+static void ht_resize(ht_hash_table *ht, const int new_size) {
+    if (new_size < HT_INITIAL_BASE_SIZE) {
+        return;
+    }
+
+    ht_hash_table *new_ht = ht_new_hash_table(new_size);
+
+    for (int i = 0; i < ht->size; i++) {
+        ht_item *current_item = ht->items[i];
+        if (current_item != NULL && current_item != &HT_DELETED_ITEM) {
+            ht_insert(new_ht, current_item->key, current_item->value);
+        }
+    }
+
+    ht->base_size = new_ht->base_size;
+    ht->count = new_ht->count;
+
+    const int tmp_size = ht->size;
+    ht_item **tmp_items = ht->items;
+
+    ht->items = new_ht->items;
+    ht->size = new_ht->size;
+
+    new_ht->items = tmp_items;
+    new_ht->size = tmp_size;
+
+    ht_del_hash_table(new_ht);
+}
+
+static void ht_resize_up(ht_hash_table *ht) {
+    const int new_size = ht->base_size * 2;
+    ht_resize(ht, new_size);
+}
+
+static void ht_resize_down(ht_hash_table *ht) {
+    const int new_size = ht->base_size / 2;
+    ht_resize(ht, new_size);
+}
+
 void ht_insert(ht_hash_table *ht, const char *key, const char *value) {
     const int load = ht->count * 100 / ht->size;
 
@@ -140,45 +179,6 @@ void ht_delete(ht_hash_table *ht, const char *key) {
         i++;
     }
     ht->count--;
-}
-
-static void ht_resize(ht_hash_table *ht, const int new_size) {
-    if (new_size < HT_INITIAL_BASE_SIZE) {
-        return;
-    }
-
-    ht_hash_table *new_ht = ht_new_hash_table(new_size);
-
-    for (int i = 0; i < ht->size; i++) {
-        ht_item *current_item = ht->items[i];
-        if (current_item != NULL && current_item != &HT_DELETED_ITEM) {
-            ht_insert(new_ht, current_item->key, current_item->value);
-        }
-    }
-
-    ht->base_size = new_ht->base_size;
-    ht->count = new_ht->count;
-
-    const int tmp_size = ht->size;
-    ht_item **tmp_items = ht->items;
-
-    ht->items = new_ht->items;
-    ht->size = new_ht->size;
-
-    new_ht->items = tmp_items;
-    new_ht->size = tmp_size;
-
-    ht_del_hash_table(new_ht);
-}
-
-static void ht_resize_up(ht_hash_table *ht) {
-    const int new_size = ht->base_size * 2;
-    ht_resize(ht, new_size);
-}
-
-static void ht_resize_down(ht_hash_table *ht) {
-    const int new_size = ht->base_size / 2;
-    ht_resize(ht, new_size);
 }
 
 int main() {
